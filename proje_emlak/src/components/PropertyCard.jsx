@@ -26,7 +26,7 @@ function PropertyCard({ property }) {
   };
 
   return (
-    <div style={styles.card} onClick={() => navigate(`/property/${property.id}`)}>
+    <div style={styles.card} className="property-card" onClick={() => navigate(`/property/${property.id}`)}>
       <div
         style={{
           ...styles.cardImage,
@@ -55,6 +55,12 @@ function PropertyCard({ property }) {
       </div>
 
       <div style={styles.cardContent}>
+        {property.location && (
+          <div style={styles.location}>
+            <span style={styles.locationIcon}>📍</span>
+            <span>{property.location}</span>
+          </div>
+        )}
         <h3 style={styles.cardTitle}>{property.title}</h3>
 
         <div style={styles.price}>
@@ -62,19 +68,27 @@ function PropertyCard({ property }) {
           {property.price.toLocaleString('tr-TR')}
         </div>
 
+        <div style={styles.divider} />
+
         <div style={styles.cardFeatures}>
-          <div style={styles.feature}>
-            <span>🏢</span>
-            <span>{property.type}</span>
-          </div>
-          <div style={styles.feature}>
-            <span>🛏️</span>
-            <span>{property.rooms}</span>
-          </div>
-          <div style={styles.feature}>
-            <span>📏</span>
-            <span>{property.area} m²</span>
-          </div>
+          {property.type && (
+            <div style={styles.feature}>
+              <span>🏢</span>
+              <span>{property.type}</span>
+            </div>
+          )}
+          {property.rooms && (
+            <div style={styles.feature}>
+              <span>🛏️</span>
+              <span>{property.rooms}</span>
+            </div>
+          )}
+          {property.area && (
+            <div style={styles.feature}>
+              <span>📏</span>
+              <span>{property.area} m²</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -84,12 +98,12 @@ function PropertyCard({ property }) {
 const styles = {
   card: {
     background: 'white',
-    borderRadius: '12px',
+    borderRadius: '14px',
     overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-    transition: 'transform 0.3s ease',
+    boxShadow: '0 2px 12px rgba(0,0,0,0.07)',
     cursor: 'pointer',
-    height: '100%'
+    height: '100%',
+    border: '1px solid #f1f5f9'
   },
 
   cardImage: {
@@ -148,40 +162,68 @@ const styles = {
   },
 
   cardContent: {
-    padding: '20px'
+    padding: '18px 20px 20px'
+  },
+
+  location: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: '#64748b',
+    marginBottom: '8px',
+    fontWeight: '500'
+  },
+
+  locationIcon: {
+    fontSize: '12px',
+    flexShrink: 0
   },
 
   cardTitle: {
-    fontSize: '1.1em',
-    color: '#333',
-    marginBottom: '15px',
-    minHeight: '50px',
-    lineHeight: '1.4'
+    fontSize: '1em',
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: '12px',
+    lineHeight: '1.45',
+    display: '-webkit-box',
+    WebkitLineClamp: 2,
+    WebkitBoxOrient: 'vertical',
+    overflow: 'hidden'
   },
 
   price: {
     color: '#f59e0b',
-    fontSize: '1.6em',
-    fontWeight: 'bold',
-    marginBottom: '15px'
+    fontSize: '1.5em',
+    fontWeight: '700',
+    marginBottom: '14px',
+    letterSpacing: '-0.02em'
   },
 
   priceSymbol: {
-    fontSize: '0.7em',
-    marginRight: '2px'
+    fontSize: '0.65em',
+    marginRight: '2px',
+    fontWeight: '600'
+  },
+
+  divider: {
+    height: '1px',
+    background: '#f1f5f9',
+    marginBottom: '14px'
   },
 
   cardFeatures: {
     display: 'flex',
-    gap: '15px',
-    color: '#666',
-    fontSize: '0.9em'
+    gap: '14px',
+    color: '#64748b',
+    fontSize: '0.82em',
+    fontWeight: '500'
   },
 
   feature: {
     display: 'flex',
     alignItems: 'center',
-    gap: '5px'
+    gap: '4px'
   }
 };
 

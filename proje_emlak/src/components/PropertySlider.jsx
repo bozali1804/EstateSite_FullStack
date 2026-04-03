@@ -49,7 +49,12 @@ function PropertySlider({ properties, title = "Öne Çıkan İlanlar" }) {
 
   return (
     <div style={styles.sliderContainer} className="slider-container">
-      {title && <h2 style={styles.title} className="slider-title">{title}</h2>}
+      {title && (
+        <div style={styles.titleRow}>
+          <div style={styles.titleAccent} />
+          <h2 style={styles.title} className="slider-title">{title}</h2>
+        </div>
+      )}
 
       <div style={styles.sliderWrapper}>
         <div
@@ -118,22 +123,36 @@ function PropertySlider({ properties, title = "Öne Çıkan İlanlar" }) {
 
 const styles = {
   sliderContainer: {
-    maxWidth: '1400px',
+    maxWidth: '1200px',
     margin: '0 auto',
-    padding: '40px 20px'
+    padding: '48px 24px'
+  },
+
+  titleRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '28px'
+  },
+
+  titleAccent: {
+    width: '4px',
+    height: '26px',
+    background: 'linear-gradient(180deg, #2563eb, #1d4ed8)',
+    borderRadius: '2px',
+    flexShrink: 0
   },
 
   title: {
-    fontSize: '2em',
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: '30px',
-    textAlign: 'center'
+    fontSize: '1.5em',
+    fontWeight: '700',
+    color: '#1e293b',
+    letterSpacing: '-0.02em'
   },
 
   sliderWrapper: {
     overflow: 'hidden',
-    borderRadius: '15px',
+    borderRadius: '12px',
     position: 'relative'
   },
 

@@ -4,6 +4,9 @@ import { useProperties } from "../hooks/useProperties";
 import { useAuth } from "../context/AuthContext";
 import { doc, deleteDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import PropertyMap from "../components/PropertyMap";
+import { SITE_CONFIG } from "../utils/siteConfig";
+import { TURKEY_PROVINCES } from "../utils/turkeyProvinces";
 
 const CLOUD_NAME = "depfnf3et";
 const UPLOAD_PRESET = "zhe5ugru";
@@ -73,15 +76,24 @@ function PropertyDetail() {
 
   // ---- Edit functions ----
   const startEdit = () => {
+    // Mevcut location'ı parse et: "Mahalle, İlçe, İl" veya "İlçe, İl" veya "İl"
+    const locParts = (property.location || "").split(", ");
+    const parsedIl = locParts.length >= 1 ? locParts[locParts.length - 1] : "İstanbul";
+    const parsedIlce = locParts.length >= 2 ? locParts[locParts.length - 2] : "";
+    const parsedMahalle = locParts.length >= 3 ? locParts.slice(0, -2).join(", ") : "";
+
     setEditForm({
       title: property.title || "",
       price: property.price || "",
-      location: property.location || "",
+      il: TURKEY_PROVINCES.includes(parsedIl) ? parsedIl : "İstanbul",
+      ilce: TURKEY_PROVINCES.includes(parsedIl) ? parsedIlce : "",
+      mahalleSokak: TURKEY_PROVINCES.includes(parsedIl) ? parsedMahalle : "",
       rooms: property.rooms || "",
       area: property.area || "",
       status: property.status || "SATILIK",
       type: property.type || "Daire",
-      description: property.description || ""
+      description: property.description || "",
+      sahibindenLink: property.sahibindenLink || ""
     });
     setEditImages([...images]);
     setNewImageFiles([]);
@@ -178,15 +190,22 @@ function PropertyDetail() {
 
       setUploadProgress("Kaydediliyor...");
 
+      const parts = [editForm.mahalleSokak?.trim(), editForm.ilce.trim(), editForm.il].filter(Boolean);
+      const location = parts.join(", ");
+
       await updateDoc(doc(db, "properties", property.id), {
         title: editForm.title,
         price: Number(editForm.price),
-        location: editForm.location,
+        location,
+        il: editForm.il,
+        ilce: editForm.ilce,
+        mahalleSokak: editForm.mahalleSokak || "",
         rooms: editForm.rooms,
         area: Number(editForm.area),
         status: editForm.status,
         type: editForm.type,
         description: editForm.description,
+        sahibindenLink: editForm.sahibindenLink || "",
         image: allImages[0],
         images: allImages
       });
@@ -218,9 +237,22 @@ function PropertyDetail() {
               <input name="title" value={editForm.title} onChange={handleEditChange} style={styles.editInput} />
             </div>
             <div style={styles.editGroup}>
-              <label style={styles.editLabel}>Konum</label>
-              <input name="location" value={editForm.location} onChange={handleEditChange} style={styles.editInput} />
+              <label style={styles.editLabel}>İl</label>
+              <select name="il" value={editForm.il} onChange={handleEditChange} style={styles.editInput}>
+                {TURKEY_PROVINCES.map((il) => (
+                  <option key={il} value={il}>{il}</option>
+                ))}
+              </select>
             </div>
+            <div style={styles.editGroup}>
+              <label style={styles.editLabel}>İlçe</label>
+              <input name="ilce" value={editForm.ilce} onChange={handleEditChange} style={styles.editInput} placeholder="Örn: Kadıköy" />
+            </div>
+          </div>
+
+          <div style={styles.editGroup}>
+            <label style={styles.editLabel}>Mahalle / Sokak <span style={{ fontWeight: 400, color: '#94a3b8', fontSize: '0.85em' }}>(opsiyonel)</span></label>
+            <input name="mahalleSokak" value={editForm.mahalleSokak || ""} onChange={handleEditChange} style={styles.editInput} placeholder="Örn: Moda Cad. veya Fenerbahçe Mah." />
           </div>
 
           <div style={styles.editRow}>
@@ -266,6 +298,25 @@ function PropertyDetail() {
               onChange={handleEditChange}
               style={{ ...styles.editInput, minHeight: '120px', resize: 'vertical' }}
               placeholder="İlan hakkında detaylı bilgi yazın..."
+            />
+          </div>
+
+          <div style={styles.editGroup}>
+            <label style={styles.editLabel}>
+              <img
+                src="https://www.sahibinden.com/favicon.ico"
+                alt="sahibinden"
+                style={{ width: '14px', height: '14px', verticalAlign: 'middle', marginRight: '6px' }}
+              />
+              Sahibinden.com Linki (opsiyonel)
+            </label>
+            <input
+              type="url"
+              name="sahibindenLink"
+              value={editForm.sahibindenLink}
+              onChange={handleEditChange}
+              style={styles.editInput}
+              placeholder="https://www.sahibinden.com/ilan/..."
             />
           </div>
         </div>
@@ -390,6 +441,21 @@ function PropertyDetail() {
           <span style={styles.statusBadge}>{property.status}</span>
           <span style={styles.typeBadge}>{property.type}</span>
           {property.verified && <span style={styles.verifiedBadge}>✓ Onaylı</span>}
+          {property.sahibindenLink && (
+            <a
+              href={property.sahibindenLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={styles.sahibindenBadge}
+              title="Sahibinden.com'da görüntüle"
+            >
+              <img
+                src="https://www.sahibinden.com/favicon.ico"
+                alt="sahibinden.com"
+                style={{ width: '20px', height: '20px', display: 'block' }}
+              />
+            </a>
+          )}
         </div>
 
         <div style={styles.details} className="property-detail-grid">
@@ -411,11 +477,39 @@ function PropertyDetail() {
           </div>
         </div>
 
+        {/* Contact Buttons */}
+        <div style={styles.contactSection}>
+          <a
+            href={`https://wa.me/${SITE_CONFIG.whatsapp}?text=${encodeURIComponent(`Merhaba, "${property.title}" ilanı hakkında bilgi almak istiyorum.`)}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={styles.whatsappBtn}
+          >
+            <span>💬</span>
+            WhatsApp ile Yaz
+          </a>
+          <a
+            href={`tel:${SITE_CONFIG.telefon}`}
+            style={styles.callBtn}
+          >
+            <span>📞</span>
+            Hemen Ara
+          </a>
+        </div>
+
         {/* Description */}
         {property.description && (
           <div style={styles.descriptionSection}>
             <h3 style={styles.descriptionTitle}>İlan Detayları</h3>
             <p style={styles.descriptionText}>{property.description}</p>
+          </div>
+        )}
+
+        {/* Konum Haritası */}
+        {property.location && (
+          <div style={styles.mapSection}>
+            <h3 style={styles.descriptionTitle}>Konum</h3>
+            <PropertyMap location={property.location} title={property.title} />
           </div>
         )}
 
@@ -596,6 +690,20 @@ const styles = {
     fontWeight: 'bold',
     fontSize: '0.85em'
   },
+  sahibindenBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '32px',
+    background: '#fff',
+    border: '1px solid #ddd',
+    borderRadius: '20px',
+    padding: '0 8px',
+    textDecoration: 'none',
+    transition: 'box-shadow 0.2s',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.08)'
+  },
   details: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
@@ -619,6 +727,42 @@ const styles = {
     fontWeight: '600',
     color: '#333'
   },
+  contactSection: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '24px',
+    flexWrap: 'wrap'
+  },
+  whatsappBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#25d366',
+    color: 'white',
+    padding: '14px 28px',
+    borderRadius: '10px',
+    fontSize: '1em',
+    fontWeight: '600',
+    textDecoration: 'none',
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: '180px'
+  },
+  callBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    backgroundColor: '#2563eb',
+    color: 'white',
+    padding: '14px 28px',
+    borderRadius: '10px',
+    fontSize: '1em',
+    fontWeight: '600',
+    textDecoration: 'none',
+    flex: 1,
+    justifyContent: 'center',
+    minWidth: '180px'
+  },
   descriptionSection: {
     marginBottom: '24px',
     padding: '20px',
@@ -635,6 +779,12 @@ const styles = {
     color: '#555',
     lineHeight: '1.7',
     whiteSpace: 'pre-wrap'
+  },
+  mapSection: {
+    marginBottom: '24px',
+    padding: '20px',
+    background: '#f9fafb',
+    borderRadius: '8px'
   },
   adminActions: {
     display: 'flex',

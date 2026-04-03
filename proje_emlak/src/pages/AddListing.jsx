@@ -2,6 +2,7 @@ import { useState } from "react";
 import { collection, addDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useAuth } from "../context/AuthContext";
+import { TURKEY_PROVINCES } from "../utils/turkeyProvinces";
 
 const CLOUD_NAME = "depfnf3et";
 const UPLOAD_PRESET = "zhe5ugru";
@@ -21,9 +22,12 @@ function AddListing() {
     type: "Daire",
     rooms: "",
     area: "",
-    location: "",
+    il: "İstanbul",
+    ilce: "",
+    mahalleSokak: "",
     description: "",
-    verified: true
+    verified: true,
+    sahibindenLink: ""
   });
 
   const handleChange = (e) => {
@@ -97,9 +101,14 @@ function AddListing() {
 
       setUploadProgress("İlan kaydediliyor...");
 
+      // Konum birleştir: "Mahalle/Sokak, İlçe, İl" → en detaylıdan en genel
+      const parts = [form.mahalleSokak.trim(), form.ilce.trim(), form.il].filter(Boolean);
+      const location = parts.join(", ");
+
       // Firestore'a ilanı kaydet
       await addDoc(collection(db, "properties"), {
         ...form,
+        location,
         price: Number(form.price),
         area: Number(form.area),
         image: imageURLs[0],
@@ -119,9 +128,12 @@ function AddListing() {
         type: "Daire",
         rooms: "",
         area: "",
-        location: "",
+        il: "İstanbul",
+        ilce: "",
+        mahalleSokak: "",
         description: "",
-        verified: true
+        verified: true,
+        sahibindenLink: ""
       });
     } catch (err) {
       alert("İlan eklenirken hata oluştu: " + err.message);
@@ -155,17 +167,36 @@ function AddListing() {
           </div>
 
           <div style={styles.inputGroup}>
-            <label style={styles.label}>Konum</label>
+            <label style={styles.label}>İl</label>
+            <select name="il" value={form.il} onChange={handleChange} style={styles.input} required>
+              {TURKEY_PROVINCES.map((il) => (
+                <option key={il} value={il}>{il}</option>
+              ))}
+            </select>
+          </div>
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>İlçe</label>
             <input
               type="text"
-              name="location"
-              value={form.location}
+              name="ilce"
+              value={form.ilce}
               onChange={handleChange}
               style={styles.input}
-              placeholder="Örn: Kadıköy, İstanbul"
-              required
+              placeholder="Örn: Kadıköy"
             />
           </div>
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>Mahalle / Sokak <span style={{ fontWeight: 400, color: '#94a3b8' }}>(opsiyonel — harita hassasiyeti için)</span></label>
+          <input
+            type="text"
+            name="mahalleSokak"
+            value={form.mahalleSokak}
+            onChange={handleChange}
+            style={styles.input}
+            placeholder="Örn: Moda Cad. veya Fenerbahçe Mah."
+          />
         </div>
 
         <div style={styles.row}>
@@ -237,6 +268,25 @@ function AddListing() {
             onChange={handleChange}
             style={{ ...styles.input, minHeight: '120px', resize: 'vertical' }}
             placeholder="İlan hakkında detaylı bilgi yazın..."
+          />
+        </div>
+
+        <div style={styles.inputGroup}>
+          <label style={styles.label}>
+            <img
+              src="https://www.sahibinden.com/favicon.ico"
+              alt="sahibinden"
+              style={{ width: '16px', height: '16px', verticalAlign: 'middle', marginRight: '6px' }}
+            />
+            Sahibinden.com Linki (opsiyonel)
+          </label>
+          <input
+            type="url"
+            name="sahibindenLink"
+            value={form.sahibindenLink}
+            onChange={handleChange}
+            style={styles.input}
+            placeholder="https://www.sahibinden.com/ilan/..."
           />
         </div>
 
@@ -403,6 +453,11 @@ const styles = {
     color: '#2563eb',
     marginBottom: '12px',
     fontWeight: '500'
+  },
+  hint: {
+    fontSize: '0.8em',
+    color: '#94a3b8',
+    marginTop: '4px'
   },
   button: {
     width: '100%',
